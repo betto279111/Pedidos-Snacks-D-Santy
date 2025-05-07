@@ -67,7 +67,7 @@ function addProductRow() {
     products.forEach(product => {
         const option = document.createElement('option');
         option.value = product.price;
-        option.textContent = `${product.name} - $${product.price}`;
+        option.textContent = `${product.name}`;
         productSelect.appendChild(option);
     });
     productCell.appendChild(productSelect);
