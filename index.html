@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Factura</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.20/jspdf.plugin.autotable.min.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    
+    <div class="container">
+        <h1>Generador de Factura</h1>
+              <!-- Datos del cliente -->
+        <div class="client-info">
+            <label for="clientName">Nombre Cliente:</label>
+            <input type="text" id="clientName" placeholder="Nombre del Cliente">
+            <label for="clientRUC">RUC:</label>
+            <input type="text" id="clientRUC" placeholder="RUC">
+            <label for="clientAddress">Dirección:</label>
+            <input type="text" id="clientAddress" placeholder="Dirección">
+            <label for="clientPhone">Teléfono:</label>
+            <input type="text" id="clientPhone" placeholder="Teléfono">
+        </div>
+
+        <table id="invoice-table">
+            <thead>
+                <tr>
+                    <th>Cantidad</th>
+                    <th>Producto</th>
+                    <th>Valor Unitario</th>
+                    <th>Valor Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Aquí se agregarán las filas con productos -->
+            </tbody>
+        </table>
+
+        <div class="total">
+            <p>Total Factura: $<span id="invoiceTotal">0.00</span></p>
+        </div>
+
+        <button id="addProductBtn">Agregar Producto</button>
+        <button id="generatePDF">Generar PDF</button>
+
+        <div class="whatsapp">
+            <button onclick="sendToWhatsApp()">Enviar por WhatsApp</button>
+        </div>
+    </div>
+</style>
+    <script src="script.js"></script>
+     <!-- NUEVO BLOQUE PARA BASE DE CLIENTES -->
+<div class="clientes-container">
+  <h2>Base de Clientes</h2>
+  <form id="clienteForm">
+    <input type="text" id="nuevoNombre" placeholder="Nombre" required>
+    <input type="text" id="nuevoRUC" placeholder="RUC" required>
+    <input type="text" id="nuevaDireccion" placeholder="Dirección" required>
+    <input type="text" id="nuevoTelefono" placeholder="Teléfono" required>
+    <button type="submit">Agregar Cliente</button>
+  </form>
+
+  <select id="clientesGuardados">
+    <option value="">-- Selecciona un cliente --</option>
+  </select>
+  <button id="eliminarCliente" disabled>Eliminar Cliente</button>
+</div>
+
+<script>
+  const clienteForm = document.getElementById("clienteForm");
+  const clientesGuardados = document.getElementById("clientesGuardados");
+  const eliminarBtn = document.getElementById("eliminarCliente");
+
+  clienteForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    const nombre = document.getElementById("nuevoNombre").value;
+    const ruc = document.getElementById("nuevoRUC").value;
+    const direccion = document.getElementById("nuevaDireccion").value;
+    const telefono = document.getElementById("nuevoTelefono").value;
+
+    const cliente = {
+      nombre,
+      ruc,
+      direccion,
+      telefono
+    };
+
+    let clientes = JSON.parse(localStorage.getItem("clientes")) || [];
+    clientes.push(cliente);
+    localStorage.setItem("clientes", JSON.stringify(clientes));
+
+    actualizarListaClientes();
+    clienteForm.reset();
+  });
+
+  function actualizarListaClientes() {
+    clientesGuardados.innerHTML = '<option value="">-- Selecciona un cliente --</option>';
+    const clientes = JSON.parse(localStorage.getItem("clientes")) || [];
+
+    clientes.forEach((cliente, index) => {
+      const option = document.createElement("option");
+      option.value = index;
+      option.textContent = `${cliente.nombre} (${cliente.ruc})`;
+      clientesGuardados.appendChild(option);
+    });
+    eliminarBtn.disabled = true;
+  }
+
+  clientesGuardados.addEventListener("change", function () {
+    const index = this.value;
+    const clientes = JSON.parse(localStorage.getItem("clientes")) || [];
+
+    if (clientes[index]) {
+      document.getElementById("clientName").value = clientes[index].nombre;
+      document.getElementById("clientRUC").value = clientes[index].ruc;
+      document.getElementById("clientAddress").value = clientes[index].direccion;
+      document.getElementById("clientPhone").value = clientes[index].telefono;
+      eliminarBtn.disabled = false;
+    } else {
+      eliminarBtn.disabled = true;
+    }
+  });
+
+  eliminarBtn.addEventListener("click", function () {
+    const index = clientesGuardados.value;
+    if (index !== "") {
+      let clientes = JSON.parse(localStorage.getItem("clientes")) || [];
+      clientes.splice(index, 1);
+      localStorage.setItem("clientes", JSON.stringify(clientes));
+      actualizarListaClientes();
+      document.getElementById("clientName").value = "";
+      document.getElementById("clientRUC").value = "";
+      document.getElementById("clientAddress").value = "";
+      document.getElementById("clientPhone").value = "";
+    }
+  });
+
+  actualizarListaClientes();
+
+  // DETECCIÓN DE CAMBIOS EN VALOR UNITARIO PARA ACTUALIZAR TOTAL
+  document.addEventListener("input", function (e) {
+    if (e.target && e.target.classList.contains("valor-unitario")) {
+      const row = e.target.closest("tr");
+      const cantidad = row.querySelector("input[type='number']").value;
+      const valorUnitario = e.target.value;
+      const valorTotalCell = row.cells[3];
+      valorTotalCell.textContent = (cantidad * valorUnitario).toFixed(2);
+      actualizarTotal();
+    }
+  });
+
+  function actualizarTotal() {
+    let total = 0;
+    const tabla = document.getElementById("facturaBody");
+    for (let row of tabla.rows) {
+      const totalFila = parseFloat(row.cells[3].textContent) || 0;
+      total += totalFila;
+    }
+    document.getElementById("totalFactura").textContent = total.toFixed(2);
+  }
+</script>
+
+<style>
+  .clientes-container {
+    background: #f7f7f7;
+    border: 1px solid #ccc;
+    padding: 15px;
+    margin: 20px 0;
+    border-radius: 8px;
+  }
+  .clientes-container input {
+    margin: 5px;
+    padding: 6px;
+  }
+  .clientes-container button {
+    margin-top: 10px;
+    margin-right: 5px;
+  }
+  #clientesGuardados {
+    margin: 10px 0;
+    padding: 5px;
+  }
+</style>
+
+</style>
+
+</body>
+</html>
