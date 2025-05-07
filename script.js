@@ -46,7 +46,12 @@ const products = [
     { name: "TOTOPOS 80 gm", price: 0.85 },
     { name: "TOTOPOS 120 gm", price: 1.30 },
     { name: "TOTOPOS 180 gm", price: 1.75 },
-    { name: "TOTOPOS 300 gm", price: 2.70 }
+    { name: "TOTOPOS 300 gm", price: 2.70 },
+    { name: "ROSCONES PEQUEÑOS", price: 0.50 },
+    { name: "ROSCONES GRANDES", price: 1.00 },
+    { name: "MAFALDAS PEQUEÑAS", price: 0.25 },
+    { name: "MAFALDAS MEDIANAS", price: 0.40 },
+    { name: "MAFALDAS GRANDES", price: 0.85 }
 ];
 
 document.getElementById('addProductBtn').addEventListener('click', addProductRow);
